@@ -1,5 +1,10 @@
 ![Codine Development Fuel Script Banner](https://i.imgur.com/qVOMMvW.png)
 
+# cdn-fuel-standalone
+
+as a fan of cdn-fuel I wanted to be able to use it on vMenu / Standalone servers, but standalone is not supported currently. I plan on contributing standalone support to the main cdn-fuel repo in the future if I can get it to work well. For simplicity I am removing as much of the QB functionality as I can for now.
+
+
 # _CDN-Fuel (2.1.9)_ 
 
 A highly in-depth fuel system for **FiveM** with support for the **QBCore Framework & QBox Remastered**.
