@@ -16,13 +16,14 @@ server_scripts {
     'server/fuel_sv.lua',
     'server/station_sv.lua',
     'server/electric_sv.lua',
+    'server/sv_utils.lua',
     '@oxmysql/lib/MySQL.lua',
 }
 
 shared_scripts {
     'shared/config.lua',
-    '@qb-core/shared/locale.lua',
-    -- '@ox_lib/init.lua', -- OX_Lib, only line this in if you have ox_lib and are using them.
+    'shared/locale.lua',
+    '@ox_lib/init.lua', -- OX_Lib, only line this in if you have ox_lib and are using them.
     'locales/en.lua', -- English Locales
     -- 'locales/de.lua', -- German / Deutsch Locales
     -- 'locales/fr.lua', -- French / Français Locales
@@ -40,13 +41,9 @@ lua54 'yes'
 dependencies { -- Make sure these are started before cdn-fuel in your server.cfg!
     'PolyZone',
     'interact-sound',
-    -- QB-Core Functionality (Input, Target, Menu)
-    'qb-target',
-    'qb-input',
-    'qb-menu',
     -- QBox | Overextended Functionalities (Input, Progressbar, Target, Menu etc.)
-    -- 'ox_lib', -- Ox Library
-    -- 'ox_target',
+     'ox_lib', -- Ox Library
+     'ox_target',
 }
 
 data_file 'DLC_ITYP_REQUEST' 'stream/[electric_nozzle]/electric_nozzle_typ.ytyp'

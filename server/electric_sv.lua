@@ -1,5 +1,4 @@
--- Variables
-local QBCore = exports[Config.Core]:GetCoreObject()
+
 
 -- Functions
 local function GlobalTax(value)
@@ -15,8 +14,8 @@ RegisterNetEvent("cdn-fuel:server:electric:OpenMenu", function(amount, inGasStat
 	if not player then print("Player is nil!") return end
 	local FuelCost = amount*FuelPrice
 	local tax = GlobalTax(FuelCost)
-	local total = tonumber(FuelCost + tax)
-	if not amount then if Config.FuelDebug then print("Electric Recharge Amount is invalid!") end TriggerClientEvent('QBCore:Notify', src, Lang:t("electric_more_than_zero"), 'error') return end
+	local total = tonumber(FuelCost + tax)														  
+	if not amount then if Config.FuelDebug then print("Electric Recharge Amount is invalid!") end TriggerClientEvent('ox_lib:notify', src, {title="fuel", description=Lang:t("electric_more_than_zero"), type='error'}) return end
 	Wait(50)
 	if inGasStation and not hasWeapon then
 		if Config.RenewedPhonePayment and purchasetype == "bank" then

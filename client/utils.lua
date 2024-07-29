@@ -144,3 +144,16 @@ function IsVehicleBlacklisted(veh)
 	end
 	-- return true
 end
+
+
+-- lord forgive me for this hack... it was all i could do.
+
+function NotifyPlayer(notiDescription, notiType, notiDuration)
+	lib.notify({
+		title = "Fuel",
+		description = notiDescription,
+		duration = notiDuration,
+		type = notiType,
+	})
+end
+

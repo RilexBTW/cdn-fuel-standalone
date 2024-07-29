@@ -1,7 +1,7 @@
 if Config.PlayerOwnedGasStationsEnabled then -- This is so Player Owned Gas Stations are a Config Option, instead of forced. Set this option in shared/config.lua!
     
     -- Variables
-    local QBCore = exports[Config.Core]:GetCoreObject()
+ 
     local FuelPickupSent = {} -- This is in case of an issue with vehicles not spawning when picking up vehicles.
 
     -- Functions
@@ -200,7 +200,7 @@ if Config.PlayerOwnedGasStationsEnabled then -- This is so Player Owned Gas Stat
         local src = source
         if location then
             if FuelPickupSent[location] then
-                local cid = QBCore.Functions.GetPlayer(src).PlayerData.citizenid
+                local cid = lib.callback('cdn-fuel:getcivID', false, function() end)
                 MySQL.Async.execute('UPDATE fuel_stations SET fuel = ? WHERE `location` = ?', {FuelPickupSent[location]['refuelAmount'], location})
                 TriggerClientEvent('QBCore:Notify', src, Lang:t("fuel_pickup_failed"), 'success')
                 -- This will print player information just in case someone figures out a way to exploit this.
@@ -246,99 +246,182 @@ if Config.PlayerOwnedGasStationsEnabled then -- This is so Player Owned Gas Stat
     end)
 
     -- Callbacks 
-    QBCore.Functions.CreateCallback('cdn-fuel:server:locationpurchased', function(source, cb, location)
-        if Config.FuelDebug then print("Working on it.") end
+    lib.callback.register('cdn-fuel:server:locationpurchased', function(source, location)
+        if Config.FuelDebug then 
+            print("Working on it.") 
+        end
+    
+        -- Execute a synchronous query to fetch data for the given location
         local result = MySQL.Sync.fetchAll('SELECT * FROM fuel_stations WHERE `location` = ?', {location})
-        if result then
-            for k, v in pairs(result) do
+    
+        -- Check if any result was found
+        if result and #result > 0 then
+            for _, v in pairs(result) do
                 local gasstationinfo = json.encode(v)
-                if Config.FuelDebug then print(gasstationinfo) end
+                if Config.FuelDebug then 
+                    print(gasstationinfo) 
+                end
+                
                 local owned = false
-                if Config.FuelDebug then print(v.owned) end
+                if Config.FuelDebug then 
+                    print(v.owned) 
+                end
+                
+                -- Determine ownership status based on the 'owned' field
                 if v.owned == 1 then
                     owned = true
-                    if Config.FuelDebug then print("Owned Status: True") end
+                    if Config.FuelDebug then 
+                        print("Owned Status: True") 
+                    end
                 elseif v.owned == 0 then
                     owned = false
-                    if Config.FuelDebug then print("Owned Status: False") end
+                    if Config.FuelDebug then 
+                        print("Owned Status: False") 
+                    end
                 else
-                    if Config.FuelDebug then print("Owned State (v.owned ~= 1 or 0) It must be 1 or 0! 1 = True, 0 = False!") end
+                    if Config.FuelDebug then 
+                        print("Owned State (v.owned ~= 1 or 0) It must be 1 or 0! 1 = True, 0 = False!") 
+                    end
                 end
-                cb(owned)
+                
+                -- Return the ownership status
+                return owned
             end
         else
-            if Config.FuelDebug then print("No Result Fetched!!") end
-        end
-	end)
-
-    QBCore.Functions.CreateCallback('cdn-fuel:server:doesPlayerOwnStation', function(source, cb)
-        local src = source
-        local Player = QBCore.Functions.GetPlayer(src)
-        local citizenid = Player.PlayerData.citizenid
-        if Config.FuelDebug then print("Checking if Player Already Owns Another Station...") end
-        local result = MySQL.Sync.fetchAll('SELECT * FROM fuel_stations WHERE `owner` = ?', {citizenid})
-        local tableEmpty = next(result) == nil
-        if result and not tableEmpty then
-            if Config.FuelDebug then print("Player already owns another station!") print("Result: "..json.encode(result)) end
-            cb(true)
-        else
-            if Config.FuelDebug then print("No Result Sadge!") end
-            cb(false)
-        end
-	end)
-
-    QBCore.Functions.CreateCallback('cdn-fuel:server:isowner', function(source, cb, location)
-        local src = source
-        local Player = QBCore.Functions.GetPlayer(src)
-        local citizenid = Player.PlayerData.citizenid
-        if Config.FuelDebug then print("working on it.") end
-        local result = MySQL.Sync.fetchAll('SELECT * FROM fuel_stations WHERE `owner` = ? AND location = ?', {citizenid, location})
-        if result then
-            if Config.FuelDebug then print("Got result!") print("Result: "..json.encode(result)) end
-            for _, v in pairs(result) do
-                if Config.FuelDebug then print("Owned State: "..v.owned) print("Owner: "..v.owner) end
-                if v.owner == citizenid and v.owned == 1 then
-                    cb(true) if Config.FuelDebug then print(citizenid.." is the owner.. owner state == "..v.owned) end
-                else
-                    cb(false) if Config.FuelDebug then print("The owner is: "..v.owner) end
-                end
+            if Config.FuelDebug then 
+                print("No Result Fetched!!") 
             end
-        else
-            if Config.FuelDebug then print("No Result Sadge!") end
-            cb(false)
+            return false
         end
-	end)
-
-    QBCore.Functions.CreateCallback('cdn-fuel:server:fetchinfo', function(source, cb, location)
-        local src = source
-        local Player = QBCore.Functions.GetPlayer(src)
-        if Config.FuelDebug then print("Fetching Information for Location: "..location) end
-        MySQL.Async.fetchAll('SELECT * FROM fuel_stations WHERE location = ?', {location}, function(result)
-            if result then
-                cb(result)
-                if Config.FuelDebug then print(json.encode(result)) end
-            else
-                cb(false)
-            end
-	    end)
-	end)
-
-    QBCore.Functions.CreateCallback('cdn-fuel:server:checkshutoff', function(source, cb, location)
-        if Config.FuelDebug then print("Fetching Shutoff State for Location: "..location) end
-        cb(Config.GasStations[location].shutoff)
-	end)
+    end)
     
-    QBCore.Functions.CreateCallback('cdn-fuel:server:fetchlabel', function(source, cb, location)
-        if Config.FuelDebug then print("Fetching Shutoff State for Location: "..location) end
-        MySQL.Async.fetchAll('SELECT label FROM fuel_stations WHERE location = ?', {location}, function(result)
-            if result then
-                cb(result)
-                if Config.FuelDebug then print(result) end
-            else
-                cb(false)
+
+
+
+    lib.callback.register('cdn-fuel:server:doesPlayerOwnStation', function(source)
+        local Player = QBCore.Functions.GetPlayer(source)
+        local citizenid = Player.PlayerData.citizenid
+    
+        if Config.FuelDebug then 
+            print("Checking if Player Already Owns Another Station...") 
+        end
+    
+        -- Execute a synchronous query to check for existing stations owned by the player
+        local result = MySQL.Sync.fetchAll('SELECT * FROM fuel_stations WHERE `owner` = ?', {citizenid})
+    
+        -- Check if the result is not empty
+        if result and #result > 0 then
+            if Config.FuelDebug then 
+                print("Player already owns another station!") 
+                print("Result: " .. json.encode(result)) 
             end
-	    end)
-	end)
+            return true
+        else
+            if Config.FuelDebug then 
+                print("No Result Sadge!") 
+            end
+            return false
+        end
+    end)
+    
+
+    lib.callback.register('cdn-fuel:server:isowner', function(source, location)
+        local Player = QBCore.Functions.GetPlayer(source)
+        local citizenid = Player.PlayerData.citizenid
+    
+        if Config.FuelDebug then 
+            print("Checking ownership for citizen ID: " .. citizenid .. " and location: " .. location) 
+        end
+    
+        -- Execute a synchronous query to check ownership
+        local result = MySQL.Sync.fetchAll('SELECT * FROM fuel_stations WHERE `owner` = ? AND location = ?', {citizenid, location})
+    
+        -- Check if any result was found
+        if result and #result > 0 then
+            if Config.FuelDebug then 
+                print("Got result!") 
+                print("Result: " .. json.encode(result)) 
+            end
+    
+            -- Iterate through the result to check ownership state
+            for _, v in pairs(result) do
+                if Config.FuelDebug then 
+                    print("Owned State: " .. v.owned) 
+                    print("Owner: " .. v.owner) 
+                end
+    
+                -- Check if the player is the owner and the state is 1
+                if v.owner == citizenid and v.owned == 1 then
+                    if Config.FuelDebug then 
+                        print(citizenid .. " is the owner.. owner state == " .. v.owned) 
+                    end
+                    return true
+                end
+            end
+    
+            -- If ownership is not confirmed, print debug info
+            if Config.FuelDebug then 
+                print("The owner is: " .. v.owner) 
+            end
+            return false
+        else
+            if Config.FuelDebug then 
+                print("No Result Sadge!") 
+            end
+            return false
+        end
+    end)
+    
+
+    lib.callback.register('cdn-fuel:server:fetchinfo', function(source, location)
+        if Config.FuelDebug then 
+            print("Fetching Information for Location: " .. location) 
+        end
+    
+        -- Execute a synchronous query to fetch all data for the given location
+        local result = MySQL.Sync.fetchAll('SELECT * FROM fuel_stations WHERE location = ?', {location})
+    
+        -- Check if the result is valid and contains data
+        if result and #result > 0 then
+            -- If debugging is enabled, print the JSON-encoded result
+            if Config.FuelDebug then 
+                print(json.encode(result)) 
+            end
+            -- Return the result
+            return result
+        else
+            -- Return false if no result is found
+            return false
+        end
+    end)
+    
+
+    lib.callback.register('cdn-fuel:server:checkshutoff', function(source, location)
+        if Config.FuelDebug then 
+            print("Fetching Shutoff State for Location: " .. location)
+        end
+        return Config.GasStations[location].shutoff
+    end)
+    
+    
+    
+    lib.callback.register('cdn-fuel:server:fetchlabel', function(source, location)
+        if Config.FuelDebug then 
+            print("Fetching Shutoff State for Location: " .. location)
+        end
+    
+        local result = MySQL.Sync.fetchAll('SELECT label FROM fuel_stations WHERE location = ?', {location})
+    
+        if result and #result > 0 then
+            if Config.FuelDebug then 
+                print(result[1].label) 
+            end
+            return result[1].label
+        else
+            return false
+        end
+    end)
+     
 
     -- Startup Process
     local function Startup()

@@ -1,6 +1,5 @@
 if Config.ElectricVehicleCharging then
     -- Variables   
-    local QBCore = exports[Config.Core]:GetCoreObject()
     local HoldingElectricNozzle = false
     local RefuelPossible = false
     local RefuelPossibleAmount = 0 
@@ -79,14 +78,14 @@ if Config.ElectricVehicleCharging then
 
     RegisterNetEvent('cdn-fuel:client:electric:FinalMenu', function(purchasetype)
         local money = nil
-        if purchasetype == "bank" then money = QBCore.Functions.GetPlayerData().money['bank'] elseif purchasetype == 'cash' then money = QBCore.Functions.GetPlayerData().money['cash'] end
+        if purchasetype == "bank" then money = lib.callback('cdn-fuel:getMoney', false, function() end, 'bank') elseif purchasetype == 'cash' then money = lib.callback('cdn-fuel:getMoney', false, function() end, 'cash') end
         FuelPrice = (1 * Config.ElectricChargingPrice)
         local vehicle = GetClosestVehicle()
 
         -- Police Discount Math --
         if Config.EmergencyServicesDiscount['enabled'] == true and (Config.EmergencyServicesDiscount['emergency_vehicles_only'] == false or (Config.EmergencyServicesDiscount['emergency_vehicles_only'] == true and GetVehicleClass(vehicle) == 18)) then
             local discountedJobs = Config.EmergencyServicesDiscount['job']
-            local plyJob = QBCore.Functions.GetPlayerData().job.name
+            local plyJob = lib.callback('cdn-fuel:getJobInfo', false, function() end).name
             local shouldRecieveDiscount = false
 
             if type(discountedJobs) == "table" then
@@ -100,8 +99,8 @@ if Config.ElectricVehicleCharging then
                 shouldRecieveDiscount = true
             end
 
-            if shouldRecieveDiscount == true and not QBCore.Functions.GetPlayerData().job.onduty and Config.EmergencyServicesDiscount['ondutyonly'] then
-                QBCore.Functions.Notify(Lang:t("you_are_discount_eligible"), 'primary', 7500)
+            if shouldRecieveDiscount == true and not lib.callback('cdn-fuel:getJobInfo', false, function() end).onduty and Config.EmergencyServicesDiscount['ondutyonly'] then
+                NotifyPlayer(Lang:t("you_are_discount_eligible"), 'primary', 7500)
 				shouldRecieveDiscount = false
 			end
 
@@ -164,14 +163,14 @@ if Config.ElectricVehicleCharging then
 
             if Electricity then
                 if not ElectricityAmount then if Config.FuelDebug then print("ElectricityAmount is invalid!") end return end
-                if not HoldingElectricNozzle then QBCore.Functions.Notify(Lang:t("electric_no_nozzle"), 'error', 7500) return end
+                if not HoldingElectricNozzle then NotifyPlayer(Lang:t("electric_no_nozzle"), 'error', 7500) return end
                 if (ElectricityAmount + finalfuel) >= 100 then
-                    QBCore.Functions.Notify(Lang:t("tank_already_full"), "error")
+                    NotifyPlayer(Lang:t("tank_already_full"), "error")
                 else
                     if GlobalTax(ElectricityAmount * FuelPrice) + (ElectricityAmount * FuelPrice) <= money then
                         TriggerServerEvent('cdn-fuel:server:electric:OpenMenu', ElectricityAmount, IsInGasStation(), false, purchasetype, FuelPrice)
                     else
-                        QBCore.Functions.Notify(Lang:t("not_enough_money"), 'error', 7500)
+                        NotifyPlayer(Lang:t("not_enough_money"), 'error', 7500)
                     end
                 end
             end
@@ -190,14 +189,14 @@ if Config.ElectricVehicleCharging then
             })
             if Electricity then
                 if not Electricity.amount then print("Electricity.amount is invalid!") return end
-                if not HoldingElectricNozzle then QBCore.Functions.Notify(Lang:t("electric_no_nozzle"), 'error', 7500) return end
+                if not HoldingElectricNozzle then NotifyPlayer(Lang:t("electric_no_nozzle"), 'error', 7500) return end
                 if (Electricity.amount + finalfuel) >= 100 then
-                    QBCore.Functions.Notify(Lang:t("tank_already_full"), "error")
+                    NotifyPlayer(Lang:t("tank_already_full"), "error")
                 else
                     if GlobalTax(Electricity.amount * FuelPrice) + (Electricity.amount * FuelPrice) <= money then
                         TriggerServerEvent('cdn-fuel:server:electric:OpenMenu', Electricity.amount, IsInGasStation(), false, purchasetype, FuelPrice)
                     else
-                        QBCore.Functions.Notify(Lang:t("not_enough_money"), 'error', 7500)
+                        NotifyPlayer(Lang:t("not_enough_money"), 'error', 7500)
                     end
                 end
             end
@@ -214,8 +213,8 @@ if Config.ElectricVehicleCharging then
         if not AwaitingElectricCheck then if Config.FuelDebug then print("Attempting to go to Charging Menu") end end
         if not AwaitingElectricCheck and FoundElectricVehicle then
             local CurFuel = GetVehicleFuelLevel(vehicle)
-            local playercashamount = QBCore.Functions.GetPlayerData().money['cash']
-            if not IsHoldingElectricNozzle() then QBCore.Functions.Notify(Lang:t("electric_no_nozzle"), 'error', 7500)  return end
+            local playercashamount = lib.callback('cdn-fuel:getMoney', false, function() end, 'cash')
+            if not IsHoldingElectricNozzle() then NotifyPlayer(Lang:t("electric_no_nozzle"), 'error', 7500)  return end
             if CurFuel < 95 then
                 if Config.Ox.Menu then
                     lib.registerContext({
@@ -286,7 +285,7 @@ if Config.ElectricVehicleCharging then
                     })
                 end
             else
-                QBCore.Functions.Notify(Lang:t("tank_already_full"), 'error')
+                NotifyPlayer(Lang:t("tank_already_full"), 'error')
             end
         else
             if Config.FuelDebug then print("Checking") end
@@ -328,7 +327,7 @@ if Config.ElectricVehicleCharging then
                 --     end
                 -- end
             else
-                QBCore.Functions.Notify(Lang:t("electric_vehicle_not_electric"), 'error', 7500)
+                NotifyPlayer(Lang:t("electric_vehicle_not_electric"), 'error', 7500)
             end
         end
     end)
@@ -360,7 +359,7 @@ if Config.ElectricVehicleCharging then
         -- Police Discount Math --
         if Config.EmergencyServicesDiscount['enabled'] == true and (Config.EmergencyServicesDiscount['emergency_vehicles_only'] == false or (Config.EmergencyServicesDiscount['emergency_vehicles_only'] == true and GetVehicleClass(vehicle) == 18)) then
             local discountedJobs = Config.EmergencyServicesDiscount['job']
-            local plyJob = QBCore.Functions.GetPlayerData().job.name
+            local plyJob = lib.callback('cdn-fuel:getJobInfo', false, function() end).name
             local shouldRecieveDiscount = false
 
             if type(discountedJobs) == "table" then
@@ -375,7 +374,7 @@ if Config.ElectricVehicleCharging then
             end
 
             if shouldRecieveDiscount == true and not QBCore.Functions.GetPlayerData().job.onduty and Config.EmergencyServicesDiscount['ondutyonly'] then
-                QBCore.Functions.Notify(Lang:t("you_are_discount_eligible"), 'primary', 7500)
+                NotifyPlayer(Lang:t("you_are_discount_eligible"), 'primary', 7500)
 				shouldRecieveDiscount = false
 			end
 
@@ -576,7 +575,7 @@ if Config.ElectricVehicleCharging then
                     TargetCreated = true
                     HoldingElectricNozzle = false
                     DeleteObject(ElectricNozzle)
-                    QBCore.Functions.Notify(Lang:t("nozzle_cannot_reach"), 'error')
+                    NotifyPlayer(Lang:t("nozzle_cannot_reach"), 'error')
                     if Config.PumpHose == true then
                         if Config.FuelDebug then print("Removing ELECTRIC Rope.") end
                         RopeUnloadTextures()
@@ -601,7 +600,7 @@ if Config.ElectricVehicleCharging then
                             if Config.FuelDebug then print("Attempting to charge vehicle.") end
                             TriggerEvent('cdn-fuel:client:electric:ChargeVehicle', purchasetype, fuelamounttotal)
                         else
-                            QBCore.Functions.Notify(Lang:t("electric_more_than_zero"), 'error', 7500)
+                            NotifyPlayer(Lang:t("electric_more_than_zero"), 'error', 7500)
                         end
                     end
                 end
@@ -618,7 +617,7 @@ if Config.ElectricVehicleCharging then
             -- Police Discount Math --
             if Config.EmergencyServicesDiscount['enabled'] == true then
                 local discountedJobs = Config.EmergencyServicesDiscount['job']
-                local plyJob = QBCore.Functions.GetPlayerData().job.name
+                local plyJob = lib.callback('cdn-fuel:getJobInfo', false, function() end).name
                 local shouldRecieveDiscount = false
 
                 if type(discountedJobs) == "table" then
@@ -632,8 +631,8 @@ if Config.ElectricVehicleCharging then
                     shouldRecieveDiscount = true
                 end
 
-                if shouldRecieveDiscount == true and not QBCore.Functions.GetPlayerData().job.onduty and Config.EmergencyServicesDiscount['ondutyonly'] then
-                    QBCore.Functions.Notify(Lang:t("you_are_discount_eligible"), 'primary', 7500)
+                if shouldRecieveDiscount == true and not lib.callback('cdn-fuel:getJobInfo', false, function() end).onduty and Config.EmergencyServicesDiscount['ondutyonly'] then
+                    NotifyPlayer(Lang:t("you_are_discount_eligible"), 'primary', 7500)
                     shouldRecieveDiscount = false
                 end
 
@@ -670,8 +669,8 @@ if Config.ElectricVehicleCharging then
             local total = math.ceil(cost + tax)
             local success = exports['qb-phone']:PhoneNotification(Lang:t("electric_phone_header"), Lang:t("electric_phone_notification")..total, 'fas fa-bolt', '#9f0e63', "NONE", 'fas fa-check-circle', 'fas fa-times-circle')
             if success then
-                if QBCore.Functions.GetPlayerData().money['bank'] <= (GlobalTax(amount) + amount) then
-                    QBCore.Functions.Notify(Lang:t("not_enough_money_in_bank"), "error")
+                if lib.callback('cdn-fuel:getMoney', false, function() end, 'bank') <= (GlobalTax(amount) + amount) then
+                    NotifyPlayer(Lang:t("not_enough_money_in_bank"), "error")
                 else
                     TriggerServerEvent('cdn-fuel:server:PayForFuel', total, "bank", FuelPrice, true)
                     RefuelPossible = true
